@@ -1,0 +1,68 @@
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index 4e14098..36d28e5 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -895,6 +895,7 @@ class Envs:
+     SGLANG_QUANT_ALLOW_DOWNCASTING = EnvBool(False)
+     SGLANG_FP8_IGNORED_LAYERS = EnvStr("")
+     SGLANG_FP4_IGNORED_LAYERS = EnvStr("")
++    SGLANG_ENABLE_FP8_LM_HEAD = EnvBool(False)
+     # On by default; set SGLANG_ENABLE_FP8_GEMM_CONFIG_TUNE=0 as a kill switch.
+     # Consults the tuned per-(N, K, M) Triton tile config table in
+     # apply_fp8_linear. When a tuned config exists for this GPU / weight shape /
+diff --git a/python/sglang/srt/models/bailing_moe_nextn.py b/python/sglang/srt/models/bailing_moe_nextn.py
+index 9af8c92..6874173 100644
+--- a/python/sglang/srt/models/bailing_moe_nextn.py
++++ b/python/sglang/srt/models/bailing_moe_nextn.py
+@@ -286,6 +286,14 @@ class BailingMoeForCausalLMNextN(nn.Module):
+         torch.cuda.empty_cache()
+         torch.cuda.synchronize()
+ 
++    def set_lm_head_from_target(self, target_lm_head):
++        """Used by the eagle_worker. Share the target's whole lm_head module
++        rather than only its weight tensor, so a quantized lm_head - e.g. the
++        online FP8 one - keeps its matching quant_method on the draft side."""
++        if getattr(self.config, "tie_word_embeddings", False):
++            return
++        self.lm_head = target_lm_head
++
+     def load_weights(self, weights: Iterable[Tuple[str, torch.Tensor]]):
+         self.base_load_weights_func(self, weights, is_nextn=True)
+ 
+diff --git a/python/sglang/srt/models/bailing_moe_v3.py b/python/sglang/srt/models/bailing_moe_v3.py
+index 14317b3..cf6735f 100644
+--- a/python/sglang/srt/models/bailing_moe_v3.py
++++ b/python/sglang/srt/models/bailing_moe_v3.py
+@@ -1322,6 +1322,21 @@ class BailingMoeV3ForCausalLM(nn.Module):
+         )
+ 
+         if self.pp_group.is_last_rank:
++            lm_head_quant_config = quant_config
++            if envs.SGLANG_ENABLE_FP8_LM_HEAD.get():
++                from sglang.srt.layers.quantization.fp8 import Fp8Config
++
++                # The checkpoint stores lm_head in BF16. Quantize only this
++                # layer online after loading while preserving the checkpoint's
++                # serialized FP8/MXFP4 configuration for the rest of the model.
++                lm_head_quant_config = Fp8Config(
++                    is_checkpoint_fp8_serialized=False,
++                    activation_scheme="dynamic",
++                )
++                log_info_on_rank0(
++                    logger,
++                    "Online FP8 quantization enabled for lm_head.",
++                )
+             self.lm_head = (
+                 self.model.word_embeddings
+                 if config.tie_word_embeddings
+@@ -1332,8 +1347,8 @@ class BailingMoeV3ForCausalLM(nn.Module):
+                     # path on Hopper; logits are still cast to fp32 for sampling
+                     # in the logits processor. Accuracy-neutral on ling-v3.
+                     params_dtype=torch.bfloat16,
+-                    quant_config=quant_config,
+-                    use_attn_tp_group=get_parallel().enable_dp_lm_head,
++                    quant_config=lm_head_quant_config,
++                    use_attn_tp_group=get_parallel().config.enable_dp_lm_head,
+                 )
+             )
+             self.logits_processor = LogitsProcessor(config)
