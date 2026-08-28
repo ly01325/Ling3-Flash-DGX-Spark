@@ -1,0 +1,37 @@
+{
+  "config": {
+    "label": "clean-branch-humming-fp8lmhead-mtp3-full1319",
+    "train_parquet": "/home/liuyang/Ling/benchmarks/quality/gsm8k-official/train-main.parquet",
+    "test_parquet": "/home/liuyang/Ling/benchmarks/quality/gsm8k-official/test-main.parquet",
+    "num_samples": 1319,
+    "num_shots": 5,
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "top_k": 29,
+    "max_tokens": 32768,
+    "seed": 42,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "completed": 1319,
+  "successful": 1319,
+  "errors": 0,
+  "correct": 1277,
+  "accuracy": 0.9681576952236542,
+  "invalid_answers": 0,
+  "truncated": 0,
+  "completion_tokens": 801260,
+  "decode_tokens_excluding_first": 799941,
+  "total_decode_s": 14843.355376274996,
+  "aggregate_decode_tokens_per_s": 53.89219483881606,
+  "mean_latency_s": 11.488788274799106,
+  "p50_latency_s": 6.1056473789976735,
+  "p95_latency_s": 38.59974223450077,
+  "mean_ttft_s": 0.21376772411450054,
+  "p50_completion_tokens": 318,
+  "p95_completion_tokens": 2060.199999999999,
+  "finish_reasons": {
+    "stop": 1319
+  }
+}

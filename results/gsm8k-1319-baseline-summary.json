@@ -1,0 +1,37 @@
+{
+  "config": {
+    "label": "baseline-no-optimizations-full1319",
+    "train_parquet": "/home/liuyang/Ling/benchmarks/quality/gsm8k-official/train-main.parquet",
+    "test_parquet": "/home/liuyang/Ling/benchmarks/quality/gsm8k-official/test-main.parquet",
+    "num_samples": 1319,
+    "num_shots": 5,
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "top_k": 29,
+    "max_tokens": 32768,
+    "seed": 42,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "completed": 1319,
+  "successful": 1319,
+  "errors": 0,
+  "correct": 1278,
+  "accuracy": 0.9689158453373768,
+  "invalid_answers": 0,
+  "truncated": 0,
+  "completion_tokens": 748286,
+  "decode_tokens_excluding_first": 746967,
+  "total_decode_s": 19755.02202143801,
+  "aggregate_decode_tokens_per_s": 37.811499232417795,
+  "mean_latency_s": 15.211297613559612,
+  "p50_latency_s": 8.364507654987392,
+  "p95_latency_s": 50.20051967070174,
+  "mean_ttft_s": 0.20662250885208552,
+  "p50_completion_tokens": 309,
+  "p95_completion_tokens": 1888.5999999999985,
+  "finish_reasons": {
+    "stop": 1319
+  }
+}
